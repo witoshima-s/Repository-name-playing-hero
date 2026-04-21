@@ -1052,7 +1052,7 @@ const mediaAssets = {
   },
 };
 
-function createInitialState(selectedGameId = defaultGameId, screen = "library") {
+function createInitialState(selectedGameId = defaultGameId, screen = "prelude") {
   return {
     screen,
     selectedGameId,
@@ -1093,7 +1093,7 @@ function restartSelectedGame(screen = "title") {
 }
 
 function enterLibrary() {
-  state = createInitialState(state.selectedGameId, "library");
+  state = createInitialState(state.selectedGameId, "title");
   document.body.classList.remove("dark-phase");
   render();
 }
@@ -1359,12 +1359,13 @@ function render() {
   syncIntroMusic();
 
   if (state.screen === "library") {
-    renderLibrary();
+    restartSelectedGame("title");
     return;
   }
 
   if (!getSelectedGame()) {
-    renderLibrary();
+    state = createInitialState(defaultGameId, "title");
+    render();
     return;
   }
 
@@ -1775,7 +1776,6 @@ function renderTitle() {
             <button class="primary-button" id="start-button">${t("start")}</button>
             <button class="secondary-button" id="title-world-button">${t("about")}</button>
           </div>
-          <button class="title-link-button" id="library-button">${t("gameSelect")}</button>
         </div>
         <div class="hero-art-shell">
           <div class="media-stage hero-art hero-art-title">
@@ -1794,11 +1794,6 @@ function renderTitle() {
   document.getElementById("title-world-button").addEventListener("click", () => {
     playSelectSound();
     restartSelectedGame("opening");
-  });
-
-  document.getElementById("library-button").addEventListener("click", () => {
-    playSelectSound();
-    enterLibrary();
   });
 }
 
@@ -2932,7 +2927,6 @@ function renderThirdChoice() {
             </div>
             <div class="ending-secondary-nav ending-reveal-hidden" id="third-choice-secondary-nav">
               <button class="ending-secondary-link" id="third-choice-restart">${t("endingRestart")}</button>
-              <button class="ending-secondary-link" id="third-choice-library">${t("endingLibrary")}</button>
             </div>
           </div>
         </div>
@@ -2997,12 +2991,6 @@ function renderThirdChoice() {
     playSelectSound();
     restartSelectedGame("title");
   });
-
-  document.getElementById("third-choice-library").addEventListener("click", () => {
-    playSelectSound();
-    enterLibrary();
-  });
-
   runThirdChoiceRevealAnimation();
 }
 
@@ -3055,7 +3043,6 @@ function renderThirdChoiceGallery() {
             </div>
             <div class="ending-secondary-nav ending-reveal-visible">
               <button class="ending-secondary-link" id="third-choice-gallery-restart">${t("endingRestart")}</button>
-              <button class="ending-secondary-link" id="third-choice-gallery-library">${t("endingLibrary")}</button>
             </div>
           </div>
         </div>
@@ -3077,11 +3064,6 @@ function renderThirdChoiceGallery() {
   document.getElementById("third-choice-gallery-restart").addEventListener("click", () => {
     playSelectSound();
     restartSelectedGame("title");
-  });
-
-  document.getElementById("third-choice-gallery-library").addEventListener("click", () => {
-    playSelectSound();
-    enterLibrary();
   });
 }
 
@@ -3239,7 +3221,6 @@ function renderEndingReveal(lines, normalizedScores, route = "primary") {
             <div class="ending-action-detail" id="ending-action-detail" aria-live="polite"></div>
             <div class="ending-secondary-nav ending-reveal-hidden" id="ending-secondary-nav">
               <button class="ending-secondary-link" id="restart-button">${t("endingRestart")}</button>
-              <button class="ending-secondary-link" id="ending-library-button">${t("endingLibrary")}</button>
             </div>
             <button class="ending-retry-link ending-reveal-hidden" id="ending-retry-link">
               <span class="ending-retry-link-main">${t("endingRetry")}</span>
@@ -3290,12 +3271,6 @@ function renderEndingReveal(lines, normalizedScores, route = "primary") {
     playSelectSound();
     restartSelectedGame("title");
   });
-
-  document.getElementById("ending-library-button").addEventListener("click", () => {
-    playSelectSound();
-    enterLibrary();
-  });
-
   document.getElementById("ending-retry-link")?.addEventListener("click", () => {
     playSelectSound();
     restartSelectedGame("opening");
