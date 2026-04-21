@@ -1,5 +1,16 @@
 const app = document.getElementById("app");
 
+function resolveAssetUrl(path) {
+  return new URL(path, window.location.href).href;
+}
+
+function createManagedAudio(path, { loop = true } = {}) {
+  const audio = new Audio(resolveAssetUrl(path));
+  audio.preload = "auto";
+  audio.loop = loop;
+  return audio;
+}
+
 const questions = [
   {
     id: "q1",
@@ -661,32 +672,15 @@ function persistThirdChoiceSubmission(submission) {
 }
 
 let state = createInitialState();
-const introMusic = new Audio("./assets/audio/__Brass Lockstep__.mp3");
-introMusic.preload = "auto";
-introMusic.loop = true;
-const titleMusic = new Audio("./assets/audio/1Brass Justice.mp3");
-titleMusic.preload = "auto";
-titleMusic.loop = true;
-const midMusic = new Audio("./assets/audio/Brass Doubt.mp3");
-midMusic.preload = "auto";
-midMusic.loop = true;
-const darkInterstitialMusic = new Audio("./assets/audio/Steel Doubt.mp3");
-darkInterstitialMusic.preload = "auto";
-darkInterstitialMusic.loop = true;
-const lateMusic = new Audio("./assets/audio/Grim Sirensfall.mp3");
-lateMusic.preload = "auto";
-lateMusic.loop = true;
-const resultMusic = new Audio("./assets/audio/1Grim Sirensfall.mp3");
-resultMusic.preload = "auto";
-resultMusic.loop = true;
-const endingMusic = new Audio("./assets/audio/Piano Silence.mp3");
-endingMusic.preload = "auto";
-endingMusic.loop = true;
-const thirdChoiceMusic = new Audio("./assets/audio/Crumpled Lullaby.mp3");
-thirdChoiceMusic.preload = "auto";
-thirdChoiceMusic.loop = true;
-const selectSound = new Audio("./assets/audio/PUSHU.wav");
-selectSound.preload = "auto";
+const introMusic = createManagedAudio("./assets/audio/__Brass%20Lockstep__.mp3");
+const titleMusic = createManagedAudio("./assets/audio/1Brass%20Justice.mp3");
+const midMusic = createManagedAudio("./assets/audio/Brass%20Doubt.mp3");
+const darkInterstitialMusic = createManagedAudio("./assets/audio/Steel%20Doubt.mp3");
+const lateMusic = createManagedAudio("./assets/audio/Grim%20Sirensfall.mp3");
+const resultMusic = createManagedAudio("./assets/audio/1Grim%20Sirensfall.mp3");
+const endingMusic = createManagedAudio("./assets/audio/Piano%20Silence.mp3");
+const thirdChoiceMusic = createManagedAudio("./assets/audio/Crumpled%20Lullaby.mp3");
+const selectSound = createManagedAudio("./assets/audio/PUSHU.wav", { loop: false });
 let introMusicUnlocked = false;
 let audioEnabled = true;
 let currentLanguage = "ja";
@@ -698,6 +692,7 @@ let questionRevealTimers = [];
 let questionCountdownFrameId = null;
 let transparentTitleLogoDataUrl = null;
 let transparentTitleLogoPromise = null;
+let audioUnlockBound = false;
 const QUESTION_COUNTDOWN_MS = 12_000;
 
 function loadAudioEnabledPreference() {
@@ -773,6 +768,26 @@ function getManagedAudioElements() {
   return [introMusic, titleMusic, midMusic, darkInterstitialMusic, lateMusic, resultMusic, endingMusic, thirdChoiceMusic, selectSound];
 }
 
+function bindAudioUnlockOnFirstGesture() {
+  if (audioUnlockBound) {
+    return;
+  }
+
+  audioUnlockBound = true;
+
+  const unlockFromGesture = () => {
+    if (!audioEnabled || introMusicUnlocked) {
+      return;
+    }
+    unlockIntroMusic();
+    window.removeEventListener("pointerdown", unlockFromGesture, true);
+    window.removeEventListener("keydown", unlockFromGesture, true);
+  };
+
+  window.addEventListener("pointerdown", unlockFromGesture, true);
+  window.addEventListener("keydown", unlockFromGesture, true);
+}
+
 function applyAudioEnabledState() {
   getManagedAudioElements().forEach((audio) => {
     audio.muted = !audioEnabled;
@@ -794,6 +809,7 @@ function applyAudioEnabledState() {
 function initializeAudioToggle() {
   audioEnabled = loadAudioEnabledPreference();
   applyAudioEnabledState();
+  bindAudioUnlockOnFirstGesture();
 
   const toggle = document.getElementById("audio-toggle");
   if (!toggle || toggle.dataset.bound === "true") {
