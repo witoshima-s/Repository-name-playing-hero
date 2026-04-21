@@ -1420,71 +1420,7 @@ function render() {
 }
 
 function renderLibrary() {
-  document.body.classList.remove("dark-phase");
-  const playableCount = games.filter((game) => game.status === "available").length;
-  const recoveryCount = games.length - playableCount;
-
-  app.innerHTML = `
-    <section class="panel panel-wide fade-in">
-      <div class="library-shell">
-        <div class="library-header">
-          <div class="library-copy-block">
-            <p class="eyebrow">Game Library</p>
-            <h1 class="title library-title-main">${t("libraryTitle")}</h1>
-            <p class="body-copy">${t("libraryBody")}</p>
-          </div>
-          <div class="library-summary">
-            <div class="stat-card">
-              <p class="stat-title">Playable</p>
-              <p class="stat-value">${playableCount}</p>
-            </div>
-            <div class="stat-card">
-              <p class="stat-title">Recovery Slots</p>
-              <p class="stat-value">${recoveryCount}</p>
-            </div>
-          </div>
-        </div>
-        <div class="library-grid">
-          ${games
-            .map((game) => {
-              const isAvailable = game.status === "available";
-              return `
-                <article class="library-card ${isAvailable ? "" : "library-card-muted"}">
-                  <div class="library-card-top">
-                    <p class="eyebrow">${game.eyebrow}</p>
-                    <span class="library-state ${isAvailable ? "library-state-live" : "library-state-missing"}">
-                      ${isAvailable ? "Playable" : "Recovery"}
-                    </span>
-                  </div>
-                  <div class="library-card-copy-group">
-                    <h2 class="library-card-title">${game.title}</h2>
-                    <p class="library-card-copy">${game.description}</p>
-                    <p class="library-card-detail">${game.detail}</p>
-                  </div>
-                  <div class="library-label-row">
-                    ${(game.tags ?? []).map((tag) => `<span class="library-pill">${tag}</span>`).join("")}
-                  </div>
-                  <div class="button-row">
-                    ${
-                      isAvailable
-                        ? `<button class="primary-button" data-select-game="${game.id}">${t("openGame")}</button>`
-                        : `<button class="secondary-button" type="button" disabled>${t("recoveryWaiting")}</button>`
-                    }
-                  </div>
-                </article>
-              `;
-            })
-            .join("")}
-        </div>
-      </div>
-    </section>
-  `;
-
-  app.querySelectorAll("[data-select-game]").forEach((button) => {
-    button.addEventListener("click", () => {
-      selectGame(button.dataset.selectGame);
-    });
-  });
+  restartSelectedGame("title");
 }
 
 function enterTitleFromPrelude() {
@@ -3371,6 +3307,9 @@ function runEndingGatewayReveal(route) {
 }
 
 function playSelectSound() {
+  if (!introMusicUnlocked && audioEnabled) {
+    unlockIntroMusic();
+  }
   selectSound.currentTime = 0;
   const playPromise = selectSound.play();
   if (playPromise?.catch) {
