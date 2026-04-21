@@ -351,16 +351,16 @@ const postQuestionMessages = {
 };
 
 const initialHiddenHotspots = {
-  q1: { left: 78, top: 42, width: 14, height: 30 },
-  q2: { left: 84, top: 59, width: 6, height: 14 },
-  q3: { left: 22, top: 49, width: 7, height: 13 },
-  q4: { left: 69, top: 53, width: 11, height: 24 },
-  q5: { left: 74, top: 46, width: 11, height: 22 },
-  q6: { left: 70, top: 45, width: 11, height: 22 },
-  q7: { left: 77, top: 43, width: 11, height: 22 },
-  q8: { left: 79, top: 28, width: 9, height: 18 },
-  q9: { left: 37, top: 24, width: 10, height: 20 },
-  q10: { left: 64, top: 39, width: 10, height: 21 },
+  q1: { left: 78.7, top: 43.6, width: 12.4, height: 32.1 },
+  q2: { left: 91.7, top: 61.6, width: 6.9, height: 16.6 },
+  q3: { left: 18.5, top: 40.2, width: 4, height: 22.9 },
+  q4: { left: 56.1, top: 30.2, width: 8, height: 36.6 },
+  q5: { left: 11.2, top: 37.5, width: 5.6, height: 34.7 },
+  q6: { left: 28, top: 34.9, width: 5.2, height: 41.4 },
+  q7: { left: 62.8, top: 59.8, width: 12.3, height: 14.4 },
+  q8: { left: 89, top: 28.2, width: 4, height: 28.7 },
+  q9: { left: 37.1, top: 32.8, width: 5.3, height: 29 },
+  q10: { left: 64, top: 32.7, width: 4.5, height: 22.8 },
 };
 
 const games = [
@@ -2043,6 +2043,15 @@ function formatHotspotCode(questionId, hotspot) {
   return `${questionId}: { left: ${hotspot.left}, top: ${hotspot.top}, width: ${hotspot.width}, height: ${hotspot.height} }`;
 }
 
+function formatAllHotspotsCode() {
+  return Object.keys(initialHiddenHotspots)
+    .map((questionId) => {
+      const hotspot = confirmedHotspots[questionId] ?? hiddenHotspots[questionId] ?? initialHiddenHotspots[questionId];
+      return `  ${formatHotspotCode(questionId, hotspot)}`;
+    })
+    .join(",\n");
+}
+
 function renderHotspotDebugger(questionId, hotspot) {
   const confirmed = confirmedHotspots[questionId];
   return `
@@ -2054,6 +2063,9 @@ function renderHotspotDebugger(questionId, hotspot) {
         <button class="hotspot-debugger-button hotspot-debugger-button-secondary" id="hotspot-confirm-next-${questionId}">
           仮決定して次へ
         </button>
+        <button class="hotspot-debugger-button hotspot-debugger-button-secondary" id="hotspot-export-${questionId}">
+          全体を書き出す
+        </button>
       </div>
       <code class="hotspot-debugger-code" id="hotspot-debug-${questionId}">${formatHotspotCode(questionId, hotspot)}</code>
       <p class="hotspot-debugger-status" id="hotspot-status-${questionId}">
@@ -2061,6 +2073,9 @@ function renderHotspotDebugger(questionId, hotspot) {
       </p>
       <code class="hotspot-debugger-code hotspot-debugger-code-muted" id="hotspot-confirmed-${questionId}">
         ${confirmed ? formatHotspotCode(questionId, confirmed) : "仮決定するとここに座標が残ります。"}
+      </code>
+      <code class="hotspot-debugger-code hotspot-debugger-code-muted" id="hotspot-exported-${questionId}">
+        全体を書き出すと、ここに本設定へ貼れる座標が出ます。
       </code>
     </div>
   `;
@@ -2074,6 +2089,8 @@ function enableHotspotDragging(questionId) {
   const status = document.getElementById(`hotspot-status-${questionId}`);
   const confirmButton = document.getElementById(`hotspot-confirm-${questionId}`);
   const confirmNextButton = document.getElementById(`hotspot-confirm-next-${questionId}`);
+  const exportButton = document.getElementById(`hotspot-export-${questionId}`);
+  const exportedCode = document.getElementById(`hotspot-exported-${questionId}`);
   const resizeHandle = hotspotElement?.querySelector(".hidden-hotspot-handle");
 
   if (!hotspotElement || !stage || !debugCode || !confirmButton) {
@@ -2178,6 +2195,24 @@ function enableHotspotDragging(questionId) {
   confirmNextButton?.addEventListener("click", () => {
     confirmHotspot();
     advanceHotspotDebugQuestion();
+  });
+
+  exportButton?.addEventListener("click", async () => {
+    const exportText = `const initialHiddenHotspots = {\n${formatAllHotspotsCode()}\n};`;
+    if (exportedCode) {
+      exportedCode.textContent = exportText;
+    }
+
+    try {
+      await navigator.clipboard.writeText(exportText);
+      if (status) {
+        status.textContent = "全体座標をコピーしました";
+      }
+    } catch {
+      if (status) {
+        status.textContent = "全体座標を表示しました";
+      }
+    }
   });
 }
 
