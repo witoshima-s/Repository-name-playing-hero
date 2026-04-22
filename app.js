@@ -3237,6 +3237,9 @@ function renderEndingReveal(lines, normalizedScores, route = "primary") {
         </div>
       `;
       detail.classList.add("ending-action-detail-visible");
+      window.requestAnimationFrame(() => {
+        detail.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
+      });
     });
   });
 
