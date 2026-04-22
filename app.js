@@ -3149,6 +3149,23 @@ function renderEndingReveal(lines, normalizedScores, route = "primary") {
     copy: entry.copy,
   }));
   const transitionLine = route === "soft" ? t("endingSoftTransition") : t("endingTransition");
+  const renderDestinationMarkup = (destination) => `
+    <div class="ending-action-detail-block">
+      <p class="ending-action-detail-copy">${destination.copy}</p>
+      <div class="ending-link-list">
+        ${destination.links
+          .map(
+            (link) => `
+              <a class="ending-link-card" href="${link.url}" target="_blank" rel="noreferrer noopener">
+                <span class="ending-link-label">${link.label}</span>
+                <span class="ending-link-copy">${link.description}</span>
+              </a>
+            `,
+          )
+          .join("")}
+      </div>
+    </div>
+  `;
 
   app.innerHTML = `
     <div class="question-scene-background" aria-hidden="true">
@@ -3201,6 +3218,14 @@ function renderEndingReveal(lines, normalizedScores, route = "primary") {
             </button>
           </div>
         </div>
+        <div class="ending-mobile-sheet-backdrop" id="ending-mobile-sheet-backdrop"></div>
+        <div class="ending-mobile-sheet" id="ending-mobile-sheet" aria-live="polite">
+          <div class="ending-mobile-sheet-header">
+            <p class="ending-mobile-sheet-title">${currentLanguage === "en" ? "Where to next" : "次の行き先"}</p>
+            <button class="ending-mobile-sheet-close" id="ending-mobile-sheet-close" aria-label="${currentLanguage === "en" ? "Close" : "閉じる"}">×</button>
+          </div>
+          <div class="ending-mobile-sheet-body" id="ending-mobile-sheet-body"></div>
+        </div>
       </div>
     </section>
   `;
@@ -3212,6 +3237,19 @@ function renderEndingReveal(lines, normalizedScores, route = "primary") {
   }
 
   const detail = document.getElementById("ending-action-detail");
+  const mobileSheet = document.getElementById("ending-mobile-sheet");
+  const mobileSheetBody = document.getElementById("ending-mobile-sheet-body");
+  const mobileSheetBackdrop = document.getElementById("ending-mobile-sheet-backdrop");
+  const closeMobileSheet = () => {
+    mobileSheet.classList.remove("ending-mobile-sheet-visible");
+    mobileSheetBackdrop.classList.remove("ending-mobile-sheet-backdrop-visible");
+  };
+  document.getElementById("ending-mobile-sheet-close").addEventListener("click", () => {
+    playSelectSound();
+    closeMobileSheet();
+  });
+  mobileSheetBackdrop.addEventListener("click", closeMobileSheet);
+
   const actionButtons = app.querySelectorAll("[data-ending-action]");
   actionButtons.forEach((button) => {
     button.addEventListener("click", () => {
@@ -3219,27 +3257,19 @@ function renderEndingReveal(lines, normalizedScores, route = "primary") {
       actionButtons.forEach((item) => item.classList.remove("ending-action-button-active"));
       button.classList.add("ending-action-button-active");
       const destination = actionDestinations[button.dataset.endingAction];
-      detail.innerHTML = `
-        <div class="ending-action-detail-block">
-          <p class="ending-action-detail-copy">${destination.copy}</p>
-          <div class="ending-link-list">
-            ${destination.links
-              .map(
-                (link) => `
-                  <a class="ending-link-card" href="${link.url}" target="_blank" rel="noreferrer noopener">
-                    <span class="ending-link-label">${link.label}</span>
-                    <span class="ending-link-copy">${link.description}</span>
-                  </a>
-                `,
-              )
-              .join("")}
-          </div>
-        </div>
-      `;
+      const destinationMarkup = renderDestinationMarkup(destination);
+      detail.innerHTML = destinationMarkup;
       detail.classList.add("ending-action-detail-visible");
-      window.requestAnimationFrame(() => {
-        detail.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
-      });
+      if (window.matchMedia("(max-width: 920px)").matches) {
+        mobileSheetBody.innerHTML = destinationMarkup;
+        mobileSheet.classList.add("ending-mobile-sheet-visible");
+        mobileSheetBackdrop.classList.add("ending-mobile-sheet-backdrop-visible");
+      } else {
+        closeMobileSheet();
+        window.requestAnimationFrame(() => {
+          detail.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
+        });
+      }
     });
   });
 
