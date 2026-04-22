@@ -3149,6 +3149,21 @@ function renderEndingReveal(lines, normalizedScores, route = "primary") {
     copy: entry.copy,
   }));
   const transitionLine = route === "soft" ? t("endingSoftTransition") : t("endingTransition");
+  const isCompactEndingLayout = () => window.matchMedia("(max-width: 920px)").matches;
+  const renderActionButtonsMarkup = () =>
+    actionOptions
+      .map(
+        (option, index) => `
+          <button
+            class="ending-action-button ending-reveal-hidden"
+            data-ending-action="${option.id}"
+            data-ending-action-index="${index}"
+          >
+            ${option.label}
+          </button>
+        `,
+      )
+      .join("");
   const renderDestinationMarkup = (destination) => `
     <div class="ending-action-detail-block">
       <p class="ending-action-detail-copy">${destination.copy}</p>
@@ -3193,21 +3208,7 @@ function renderEndingReveal(lines, normalizedScores, route = "primary") {
                 .join("")}
             </div>
             <p class="ending-transition-line ending-reveal-hidden" id="ending-transition-line">${transitionLine}</p>
-            <div class="ending-action-stack" id="ending-action-stack">
-              ${actionOptions
-                .map(
-                  (option, index) => `
-                    <button
-                      class="ending-action-button ending-reveal-hidden"
-                      data-ending-action="${option.id}"
-                      data-ending-action-index="${index}"
-                    >
-                      ${option.label}
-                    </button>
-                  `,
-                )
-                .join("")}
-            </div>
+            <div class="ending-action-stack" id="ending-action-stack">${renderActionButtonsMarkup()}</div>
             <div class="ending-action-detail" id="ending-action-detail" aria-live="polite"></div>
             <div class="ending-secondary-nav ending-reveal-hidden" id="ending-secondary-nav">
               <button class="ending-secondary-link" id="restart-button">${t("endingRestart")}</button>
@@ -3237,6 +3238,7 @@ function renderEndingReveal(lines, normalizedScores, route = "primary") {
   }
 
   const detail = document.getElementById("ending-action-detail");
+  const actionStack = document.getElementById("ending-action-stack");
   const mobileSheet = document.getElementById("ending-mobile-sheet");
   const mobileSheetBody = document.getElementById("ending-mobile-sheet-body");
   const mobileSheetBackdrop = document.getElementById("ending-mobile-sheet-backdrop");
@@ -3250,28 +3252,79 @@ function renderEndingReveal(lines, normalizedScores, route = "primary") {
   });
   mobileSheetBackdrop.addEventListener("click", closeMobileSheet);
 
-  const actionButtons = app.querySelectorAll("[data-ending-action]");
-  actionButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      playSelectSound();
-      actionButtons.forEach((item) => item.classList.remove("ending-action-button-active"));
-      button.classList.add("ending-action-button-active");
-      const destination = actionDestinations[button.dataset.endingAction];
-      const destinationMarkup = renderDestinationMarkup(destination);
-      detail.innerHTML = destinationMarkup;
-      detail.classList.add("ending-action-detail-visible");
-      if (window.matchMedia("(max-width: 920px)").matches) {
-        mobileSheetBody.innerHTML = destinationMarkup;
-        mobileSheet.classList.add("ending-mobile-sheet-visible");
-        mobileSheetBackdrop.classList.add("ending-mobile-sheet-backdrop-visible");
-      } else {
+  const bindPress = (element, handler) => {
+    if (!element || element.dataset.pressBound === "true") {
+      return;
+    }
+    element.dataset.pressBound = "true";
+    let lastHandledAt = 0;
+    const run = () => {
+      const now = Date.now();
+      if (now - lastHandledAt < 320) {
+        return;
+      }
+      lastHandledAt = now;
+      handler();
+    };
+    element.addEventListener("click", run);
+    element.addEventListener("pointerup", (event) => {
+      event.preventDefault();
+      run();
+    });
+    element.addEventListener("touchend", (event) => {
+      event.preventDefault();
+      run();
+    }, { passive: false });
+  };
+
+  const bindEndingActionButtons = () => {
+    const actionButtons = app.querySelectorAll("[data-ending-action]");
+    actionButtons.forEach((button) => {
+      bindPress(button, () => {
+        playSelectSound();
+        actionButtons.forEach((item) => item.classList.remove("ending-action-button-active"));
+        button.classList.add("ending-action-button-active");
+        const destination = actionDestinations[button.dataset.endingAction];
+        const destinationMarkup = renderDestinationMarkup(destination);
+
+        if (isCompactEndingLayout()) {
+          actionStack.innerHTML = `
+            <div class="ending-action-mobile-view">
+              ${destinationMarkup}
+              <button class="ending-action-mobile-back" id="ending-action-mobile-back">
+                ${currentLanguage === "en" ? "Back to choices" : "選択肢へ戻る"}
+              </button>
+            </div>
+          `;
+          const backButton = document.getElementById("ending-action-mobile-back");
+          bindPress(backButton, () => {
+            playSelectSound();
+            actionStack.innerHTML = renderActionButtonsMarkup();
+            runEndingActionReveal();
+            bindEndingActionButtons();
+          });
+          return;
+        }
+
+        detail.innerHTML = destinationMarkup;
+        detail.classList.add("ending-action-detail-visible");
         closeMobileSheet();
         window.requestAnimationFrame(() => {
           detail.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
         });
-      }
+      });
     });
-  });
+  };
+
+  const runEndingActionReveal = () => {
+    const actionButtons = app.querySelectorAll("[data-ending-action]");
+    actionButtons.forEach((button) => {
+      button.classList.add("ending-reveal-visible");
+      button.classList.remove("ending-reveal-hidden");
+    });
+  };
+
+  bindEndingActionButtons();
 
   document.getElementById("restart-button").addEventListener("click", () => {
     playSelectSound();
