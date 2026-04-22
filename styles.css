@@ -2671,6 +2671,25 @@ body.language-en .third-choice-question {
     right: 12px;
   }
 
+  .prelude-screen-opening .prelude-video,
+  .prelude-screen-opening .prelude-handoff-frame {
+    object-fit: contain;
+    object-position: center center;
+    background: #000;
+  }
+
+  .prelude-screen-opening .prelude-start-overlay {
+    align-items: flex-end;
+    justify-content: center;
+    padding: 18px 16px 28px;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.18));
+  }
+
+  .prelude-screen-opening .prelude-skip-button {
+    right: 16px;
+    bottom: 14px;
+  }
+
   .panel,
   .panel-title,
   .panel-title-hero {
