@@ -3231,8 +3231,16 @@ function renderEndingReveal(lines, normalizedScores, route = "primary") {
     </section>
   `;
 
+  let suppressSecretRouteUntil = 0;
+  const suppressSecretRoute = () => {
+    suppressSecretRouteUntil = Date.now() + 700;
+  };
+
   if (route !== "soft") {
     document.getElementById("ending-secret-trigger").addEventListener("click", () => {
+      if (Date.now() < suppressSecretRouteUntil) {
+        return;
+      }
       renderEndingReveal(lines, normalizedScores, "soft");
     });
   }
@@ -3281,6 +3289,7 @@ function renderEndingReveal(lines, normalizedScores, route = "primary") {
     const actionButtons = app.querySelectorAll("[data-ending-action]");
     actionButtons.forEach((button) => {
       bindPress(button, () => {
+        suppressSecretRoute();
         playSelectSound();
         actionButtons.forEach((item) => item.classList.remove("ending-action-button-active"));
         button.classList.add("ending-action-button-active");
@@ -3298,6 +3307,7 @@ function renderEndingReveal(lines, normalizedScores, route = "primary") {
           `;
           const backButton = document.getElementById("ending-action-mobile-back");
           bindPress(backButton, () => {
+            suppressSecretRoute();
             playSelectSound();
             actionStack.innerHTML = renderActionButtonsMarkup();
             runEndingActionReveal();
@@ -3327,10 +3337,12 @@ function renderEndingReveal(lines, normalizedScores, route = "primary") {
   bindEndingActionButtons();
 
   document.getElementById("restart-button").addEventListener("click", () => {
+    suppressSecretRoute();
     playSelectSound();
     restartSelectedGame("title");
   });
   document.getElementById("ending-retry-link")?.addEventListener("click", () => {
+    suppressSecretRoute();
     playSelectSound();
     restartSelectedGame("opening");
   });
