@@ -449,6 +449,8 @@ const uiCopy = {
     resultDelayed: "発見が遅れる命",
     resultUnrecognized: "救助対象として認識されない命",
     resultDistribution: "Distribution",
+    resultJusticeEyebrow: "Justice Reading",
+    resultJusticeHeading: "あなたの正義のかたち",
     resultNext: "最終確認",
     endingEyebrow: "Final Verification",
     endingTitle: "最後のひとり",
@@ -519,6 +521,8 @@ const uiCopy = {
     resultDelayed: "Lives found too late",
     resultUnrecognized: "Lives never recognized as rescue targets",
     resultDistribution: "Distribution",
+    resultJusticeEyebrow: "Justice Reading",
+    resultJusticeHeading: "The Shape of Your Justice",
     resultNext: "FINAL CHECK",
     endingEyebrow: "Final Verification",
     endingTitle: "The Last One",
@@ -2333,6 +2337,7 @@ function renderResult() {
   const normalizedScores = normalizeScores(state.scores);
   const timingSummary = summarizeDecisionTiming(state.responseTimes);
   const population = calculatePopulationResult(normalizedScores, timingSummary, state.silentHelpCount);
+  const justiceProfile = getJusticeProfile(state.scores, timingSummary, state.silentHelpCount);
   const resultTitle = t("resultTitle");
   const resultCopy = t("resultCopy");
 
@@ -2355,6 +2360,7 @@ function renderResult() {
             <p class="eyebrow">${t("resultEyebrow")}</p>
             <h2 class="result-title result-title-compact result-reveal-text" data-result-final="${escapeHtml(resultTitle)}"></h2>
             <p class="result-copy result-reveal-text result-copy-intro" data-result-final="${escapeHtml(resultCopy)}"></p>
+            ${renderJusticeProfile(justiceProfile)}
             <div class="result-blocks">
               ${renderMeterRow(t("resultPriority"), population.priority_saved)}
               ${renderMeterRow(t("resultDelayed"), population.delayed_found)}
@@ -2376,6 +2382,17 @@ function renderResult() {
   });
 
   runResultRevealAnimation(population);
+}
+
+function renderJusticeProfile(profile) {
+  return `
+    <section class="result-profile-card result-profile-hidden" id="result-profile-card" aria-label="${escapeHtml(t("resultJusticeHeading"))}">
+      <p class="tiny-label">${t("resultJusticeEyebrow")}</p>
+      <h3 class="result-profile-title">${escapeHtml(profile.title)}</h3>
+      <p class="result-profile-copy">${escapeHtml(profile.lines[0])}</p>
+      <p class="result-profile-copy">${escapeHtml(profile.lines[1])}</p>
+    </section>
+  `;
 }
 
 function renderResultDonut(population) {
@@ -2655,6 +2672,7 @@ function runResultRevealAnimation(_population) {
 
   const titleElement = document.querySelector(".result-title[data-result-final]");
   const copyElement = document.querySelector(".result-copy[data-result-final]");
+  const profileCard = document.getElementById("result-profile-card");
   const rows = Array.from(document.querySelectorAll(".meter-row[data-meter-target]"));
   const donutCard = document.getElementById("result-donut-card");
   const donutChart = document.querySelector("[data-result-donut]");
@@ -2670,12 +2688,19 @@ function runResultRevealAnimation(_population) {
     }, 420);
   }
 
+  if (profileCard) {
+    queueResultReveal(() => {
+      profileCard.classList.remove("result-profile-hidden");
+      profileCard.classList.add("result-profile-visible");
+    }, 1250);
+  }
+
   rows.forEach((row, index) => {
     queueResultReveal(() => {
       row.classList.remove("meter-row-hidden");
       row.classList.add("meter-row-visible");
       animateMeterRow(row, 1250);
-    }, 1900 + index * 950);
+    }, 2150 + index * 950);
   });
 
   if (donutCard && donutChart) {
@@ -2683,14 +2708,14 @@ function runResultRevealAnimation(_population) {
       donutCard.classList.remove("result-donut-hidden");
       donutCard.classList.add("result-donut-visible");
       animateResultDonut(donutChart, 1350);
-    }, 1900 + rows.length * 950 - 120);
+    }, 2150 + rows.length * 950 - 120);
   }
 
   if (actionRow) {
     queueResultReveal(() => {
       actionRow.classList.remove("result-action-row-hidden");
       actionRow.classList.add("result-action-row-visible");
-    }, 1900 + rows.length * 950 + 500);
+    }, 2150 + rows.length * 950 + 500);
   }
 }
 
@@ -3572,6 +3597,120 @@ function calculatePopulationResult(scores, timingSummary = summarizeDecisionTimi
     priority_saved,
     delayed_found,
     unrecognized,
+  };
+}
+
+function getJusticeProfile(scores, timingSummary = summarizeDecisionTiming([]), silentHelpCount = 0) {
+  const { A, B, D } = scores;
+  const hesitationIndex =
+    timingSummary.slowCount +
+    timingSummary.hesitationLoad / 12_000 +
+    (timingSummary.averageMs >= 8_000 ? 1 : 0);
+
+  const profiles = {
+    light: {
+      ja: {
+        title: "灯りを追う正義",
+        lines: [
+          "あなたは、強く見える危機にすばやく反応する傾向がありました。",
+          "助けを求める声や、目の前の切迫した状況に引かれる正義です。",
+        ],
+      },
+      en: {
+        title: "Justice That Follows the Light",
+        lines: [
+          "You tended to react quickly to the crises that were easiest to see.",
+          "Yours is a form of justice drawn to urgent voices and visible distress.",
+        ],
+      },
+    },
+    quiet: {
+      ja: {
+        title: "静けさを拾う正義",
+        lines: [
+          "あなたは、目立たない危機や、声にならない苦しさに目を向ける傾向がありました。",
+          "騒がれない場所に残された命を拾いにいく正義です。",
+        ],
+      },
+      en: {
+        title: "Justice That Picks Up the Quiet",
+        lines: [
+          "You tended to notice quieter crises and pain that never became a voice.",
+          "Yours is a form of justice that reaches for the lives left in unspoken places.",
+        ],
+      },
+    },
+    whole: {
+      ja: {
+        title: "全体を守る正義",
+        lines: [
+          "あなたは、ひとりの切実さよりも、全体の被害を減らす判断を優先する傾向がありました。",
+          "多くを守るために、流れや仕組みを選び取る正義です。",
+        ],
+      },
+      en: {
+        title: "Justice That Protects the Whole",
+        lines: [
+          "You tended to prioritize reducing overall harm rather than answering one person’s urgency first.",
+          "Yours is a form of justice that chooses systems and flow in order to protect the many.",
+        ],
+      },
+    },
+    wavering: {
+      ja: {
+        title: "揺れを抱える正義",
+        lines: [
+          "あなたは、選択を急がず、どちらにも理由を感じ取る傾向がありました。",
+          "簡単に割り切らず、迷いごと抱え続ける正義です。",
+        ],
+      },
+      en: {
+        title: "Justice That Carries Its Hesitation",
+        lines: [
+          "You tended not to rush your choices, sensing reasons on both sides.",
+          "Yours is a form of justice that keeps moving while still carrying its doubts.",
+        ],
+      },
+    },
+    overlooked: {
+      ja: {
+        title: "見落としを恐れる正義",
+        lines: [
+          "あなたは、救われる命の数だけでなく、認識されない命の存在にも敏感でした。",
+          "見落とされる人、後回しにされる人を気にし続ける正義です。",
+        ],
+      },
+      en: {
+        title: "Justice That Fears What Gets Missed",
+        lines: [
+          "You were sensitive not only to the number of lives saved, but also to lives that go unrecognized.",
+          "Yours is a form of justice that keeps worrying about the people who get overlooked or left behind.",
+        ],
+      },
+    },
+  };
+
+  let key = "wavering";
+
+  if (silentHelpCount >= 3 && D <= 1) {
+    key = hesitationIndex >= 2.2 ? "overlooked" : "quiet";
+  } else if (B >= A + 2 && B >= 4) {
+    key = "whole";
+  } else if (A >= B + 1 && A >= 4 && D >= 1) {
+    key = "light";
+  } else if (hesitationIndex >= 2.2 || Math.abs(A - B) <= 1) {
+    key = "wavering";
+  } else if (silentHelpCount >= 2) {
+    key = "overlooked";
+  } else if (B > A) {
+    key = "whole";
+  } else {
+    key = "light";
+  }
+
+  return {
+    key,
+    ...(currentLanguage === "en" ? profiles[key].en : profiles[key].ja),
   };
 }
 

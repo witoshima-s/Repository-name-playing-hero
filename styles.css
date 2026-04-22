@@ -1377,6 +1377,16 @@ body.language-en .ending-action-button {
   font-size: 0.98rem;
 }
 
+body.language-en .result-profile-title {
+  font-size: clamp(1.14rem, 1.85vw, 1.36rem);
+  line-height: 1.24;
+}
+
+body.language-en .result-profile-copy {
+  font-size: 0.93rem;
+  line-height: 1.56;
+}
+
 body.language-en .ending-retry-link {
   font-size: 0.96rem;
 }
@@ -1605,6 +1615,45 @@ body.language-en .third-choice-question {
 
 .result-copy-intro {
   max-width: 40rem;
+}
+
+.result-profile-card {
+  display: grid;
+  gap: 10px;
+  padding: 18px 20px;
+  border-radius: 22px;
+  border: 1px solid rgba(146, 174, 219, 0.16);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.result-profile-hidden {
+  opacity: 0;
+  transform: translateY(12px);
+  filter: blur(8px);
+}
+
+.result-profile-visible {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+  transition:
+    opacity 260ms ease,
+    transform 280ms ease,
+    filter 280ms ease;
+}
+
+.result-profile-title {
+  margin: 0;
+  font-size: clamp(1.22rem, 2.1vw, 1.54rem);
+  line-height: 1.2;
+}
+
+.result-profile-copy {
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.62;
+  color: rgba(231, 239, 250, 0.9);
 }
 
 .result-visual-column {
