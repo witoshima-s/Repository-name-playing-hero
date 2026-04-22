@@ -1583,13 +1583,15 @@ function renderPrelude() {
   document.body.classList.remove("dark-phase");
   app.innerHTML = `
     <section class="prelude-screen prelude-screen-opening fade-in" aria-label="Opening video">
-      <video
-        id="prelude-video"
-        class="prelude-video"
-        src="${mediaAssets.openingPrelude.videoSrc}"
-        preload="auto"
-        playsinline
-      ></video>
+      <div class="prelude-opening-frame">
+        <video
+          id="prelude-video"
+          class="prelude-video"
+          src="${mediaAssets.openingPrelude.videoSrc}"
+          preload="auto"
+          playsinline
+        ></video>
+      </div>
       <div class="prelude-start-overlay" id="prelude-start-overlay">
         <button class="prelude-start-button" id="prelude-start-button">TAP TO START</button>
       </div>
