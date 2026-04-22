@@ -1588,14 +1588,19 @@ function renderPrelude() {
         class="prelude-video"
         src="${mediaAssets.openingPrelude.videoSrc}"
         preload="auto"
-        autoplay
         playsinline
       ></video>
-      <button class="prelude-skip-button" id="prelude-skip-button">SKIP</button>
+      <div class="prelude-start-overlay" id="prelude-start-overlay">
+        <button class="prelude-start-button" id="prelude-start-button">TAP TO START</button>
+      </div>
+      <button class="prelude-skip-button prelude-skip-button-hidden" id="prelude-skip-button">SKIP</button>
     </section>
   `;
 
   const video = document.getElementById("prelude-video");
+  const startOverlay = document.getElementById("prelude-start-overlay");
+  const startButton = document.getElementById("prelude-start-button");
+  const skipButton = document.getElementById("prelude-skip-button");
   if (!video) {
     enterTitleFromPrelude();
     return;
@@ -1614,23 +1619,39 @@ function renderPrelude() {
     enterTitleFromPrelude();
   };
 
-  document.getElementById("prelude-skip-button")?.addEventListener("click", () => {
+  skipButton?.addEventListener("click", () => {
     playSelectSound();
     handoffToTitle();
   });
 
-  const playPromise = video.play();
-  if (playPromise?.catch) {
-    playPromise.catch(() => {
+  const startPreludePlayback = () => {
+    if (!audioEnabled) {
       video.muted = true;
-      const mutedPlay = video.play();
-      if (mutedPlay?.catch) {
-        mutedPlay.catch(() => {
-          handoffToTitle();
-        });
-      }
-    });
-  }
+    } else {
+      video.muted = false;
+      unlockIntroMusic();
+    }
+
+    const playPromise = video.play();
+    if (playPromise?.catch) {
+      playPromise.catch(() => {
+        video.muted = true;
+        const mutedPlay = video.play();
+        if (mutedPlay?.catch) {
+          mutedPlay.catch(() => {
+            handoffToTitle();
+          });
+        }
+      });
+    }
+
+    startOverlay?.classList.add("prelude-start-overlay-hidden");
+    skipButton?.classList.remove("prelude-skip-button-hidden");
+  };
+
+  startButton?.addEventListener("click", () => {
+    startPreludePlayback();
+  });
 
   video.addEventListener("timeupdate", () => {
     if (!Number.isFinite(video.duration) || video.duration <= 0) {
